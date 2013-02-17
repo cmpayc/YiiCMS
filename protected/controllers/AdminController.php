@@ -25,13 +25,20 @@ class AdminController extends BaseAdminController
             }else if(!preg_match('/[a-zA-Z-_\.,]/',query('inputDomains'))){
                 $error .= '- Домены должны содержать только буквы латинского алфавита<br />';
             }
-            if(is_dir(app()->getBasePath().'/views/sites/'.strtolower(query('inputFolder')))){
-                $error .= '- Указанная папка с сайтом уже существует. Удалите ее или укажите другую';
-            }else if(!is_writable(app()->getBasePath().'/views/sites/')){
-                $error .= '- Нет прав доступа на запись в папку сайтов';
+            if(!is_dir(app()->getBasePath().DS.'views'.DS.'sites')){
+                if(!is_writable(app()->getBasePath().DS.'views'.DS)){
+                    $error .= '- Нет прав запси в папку '.app()->getBasePath().DS.'views'.DS.'<br />';
+                }else{
+                    mkdir(app()->getBasePath().DS.'views'.DS.'sites');
+                }
+            }
+            if(is_dir(app()->getBasePath().DS.'views'.DS.'sites/'.strtolower(query('inputFolder')))){
+                $error .= '- Указанная папка с сайтом уже существует. Удалите ее или укажите другую<br />';
+            }else if(!is_writable(app()->getBasePath().DS.'views'.DS.'sites'.DS)){
+                $error .= '- Нет прав доступа на запись в папку сайтов ('.app()->getBasePath().DS.'views'.DS.'sites'.DS.')<br />';
             }
             if($isSite = SITES::model()->findByAttributes(array('folder'=>query('inputFolder')))){
-                $error .= '- Указанная папка привязана к сайту <a href="'.app()->createUrl('admin/siteEdit/id/'.$isSite->id).'">'.$isSite->title.'"</a>';
+                $error .= '- Указанная папка привязана к сайту <a href="'.app()->createUrl('admin/siteEdit/id/'.$isSite->id).'">'.$isSite->title.'</a><br />';
             }
             if($error){
                 $_GET['new'] = 1;
@@ -42,10 +49,10 @@ class AdminController extends BaseAdminController
                 $inputTemplateHeader = query('inputTemplateHeader');
                 $inputTemplateFooter = query('inputTemplateFooter');
                 // Создаем папку сайта
-                mkdir(app()->getBasePath().'/views/sites/'.$folder);
+                mkdir(app()->getBasePath().DS.'views'.DS.'sites'.DS.$folder);
                 // Создаем шаблон сайта
-                file_put_contents(app()->getBasePath().'/views/sites/'.$folder.'/template.php',$inputTemplateHeader."\n".'<?php echo $content; ?>'."\n".$inputTemplateFooter);
-                file_put_contents(app()->getBasePath().'/views/sites/'.$folder.'/index.php','Hello world!');
+                file_put_contents(app()->getBasePath().DS.'views'.DS.'sites'.DS.$folder.DS.'template.php',$inputTemplateHeader."\n".'<?php echo $content; ?>'."\n".$inputTemplateFooter);
+                file_put_contents(app()->getBasePath().DS.'views'.DS.'sites'.DS.$folder.DS.'index.php','Hello world!');
                 $site = new SITES();
                 $site->title = $title;
                 $site->folder = $folder;
@@ -87,6 +94,46 @@ class AdminController extends BaseAdminController
             'domains' => $domains,
             'sites' => $sites,
         ));
+    }
+    
+    public function actionAjaxSaveDomain(){
+        $result = new stdClass();
+        try {
+            if(query('isdelete')){
+                $deleteId = (int) query('isdelete');
+                DOMAINS::model()->deleteByPk($deleteId);
+                $result->deleted = 1;
+            }else if(query('isnew')){
+                $domainName = strtolower(query('domainName'));
+                $siteId = (int) query('siteId');
+                if(!$domainName || !preg_match('/[a-z\.-_]/',$domainName))
+                    e('Domain is not correct');
+                if(!$siteId)
+                    e('Site is not correct');
+                $domain = new DOMAINS();
+                $domain->domain_name = $domainName; 
+                $domain->site_id = $siteId;
+                $domain->save();
+                $result->added = $domain->id;
+            }else{
+                $id = (int) query('id');
+                $domainName = strtolower(query('domainName'));
+                $siteId = (int) query('siteId');
+                if(!$domainName || !preg_match('/[a-z\.-_]/',$domainName))
+                    e('Domain is not correct');
+                if(!$siteId)
+                    e('Site is not correct');
+                if(!$domain = DOMAINS::model()->findByPk($id))
+                    e('Domain not founded');
+                $domain->domain_name = $domainName; 
+                $domain->site_id = $siteId;
+                $domain->save();
+                $result->saved = 1;
+            }
+        } catch (Exception $e) {
+            $result->error = $e->getMessage();
+        }
+        echo CJSON::encode($result);
     }
     
     public function actionLogin(){

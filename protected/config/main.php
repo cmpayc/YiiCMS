@@ -7,7 +7,7 @@
 // CWebApplication properties can be configured here.
 $settings = array(
 	'basePath'=>dirname(__FILE__).DIRECTORY_SEPARATOR.'..',
-	'name'=>'test cms',
+	'name'=>'YiiCMS',
 
 	// preloading 'log' component
 	'preload'=>array('log'),
@@ -20,7 +20,7 @@ $settings = array(
 
 	'defaultController'=>'site',
         
-        'modules'=>require(dirname(__FILE__).'/__modules.php'),
+        'modules'=>json_decode(file_get_contents(dirname(__FILE__).DIRECTORY_SEPARATOR.'modules.json'), true),
         
 	// application components
 	'components'=>array(
@@ -28,14 +28,7 @@ $settings = array(
 			// enable cookie-based authentication
 			'allowAutoLogin'=>true,
 		),
-		'db'=>array(
-			'connectionString'=>'mysql:host=localhost;dbname=testing;',
-			'username'=>'root',
-			'password'=>'',
-			'charset'=>'utf8',
-                        'enableParamLogging' => true,
-			'enableProfiling'=>true,
-		),
+		'db'=>require(dirname(__FILE__).DIRECTORY_SEPARATOR.'__connect.php'),
                 'session' => array(
                         'class' => 'CDbHttpSession',
                         'cookieParams' => array(
@@ -49,11 +42,11 @@ $settings = array(
                 ),
 		'errorHandler'=>array(
 			// use 'site/error' action to display errors
-			'errorAction'=>'index/error',
+			'errorAction'=>'site/error',
 		),
 		'urlManager'=>array(
 			'urlFormat'=>'path',
-			'rules'=>require(dirname(__FILE__).'/__rules.php'),
+			'rules'=>json_decode(file_get_contents(dirname(__FILE__).DIRECTORY_SEPARATOR.'rules.json'), true)
 		),
 		'log'=>array(
 			'class'=>'CLogRouter',
@@ -80,27 +73,7 @@ $settings = array(
 );
 //Выбор языка
 $settings['language'] ='ru';
-/*
-$settings['components']['db'] = array(
-  'connectionString'=>'mysql:host=localhost;dbname=testing;',
-  'username'=>'root',
-  'password'=>'',
-  'charset'=>'utf8',
-// turn on schema caching to improve performance
-//   'schemaCachingDuration'=> 60,
-//   'enableProfiling'=>true,
-//   'enableParamLogging' => true,
-);
 
-$settings['components']['log']['routes'][] = array(
-    'class'=>'CProfileLogRoute',
-    'levels'=>'error, warning, profile',
-    'showInFireBug' => true,
-    'report' => 'callstack',
-    'ignoreAjaxInFireBug' => false
-);
-*/
-
-require_once($settings['basePath'].'/globals.php');
+require_once($settings['basePath'].DIRECTORY_SEPARATOR.'globals.php');
 
 return $settings;

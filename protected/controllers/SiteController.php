@@ -4,6 +4,9 @@ class SiteController extends BaseController
 {
     
     public function beforeAction($action) {
+        if($action == 'error')
+            return parent::beforeAction();
+                    
         $action_id = strtolower($action->id);
         if(!$action_id){
             $action_id = 'index';
