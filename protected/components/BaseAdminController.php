@@ -8,6 +8,12 @@ class BaseAdminController extends CController {
   public function init() {
     $this->salt = Yii::app()->params['salt'];
     $this->layout = 'admin';
+    
+    $request = preg_replace("/.*admin\//", '', strtolower($_SERVER['REQUEST_URI']));
+    $request = str_replace('/',DS,$request);
+    if(is_file(app()->basePath.DS.'views'.DS.'admin'.DS.$request)){
+        $this->returnFile(app()->basePath.DS.'views'.DS.'admin'.DS.$request);
+    }
 
     if(!Yii::app()->getUser()->isGuest) {
       $this->user = USERS::model()->findByPk(user()->id);
@@ -44,6 +50,43 @@ class BaseAdminController extends CController {
             $canAccess = 0;
       }
       return $canAccess;
+  }
+  
+  public function returnFile($filename){
+      $file_extension = strtolower(substr(strrchr($filename,"."),1));
+      $download = true;
+      switch ($file_extension) {
+          case "css": $ctype="text/css";$download = false;break;
+          case "js": $ctype="text/javascript";$download = false;break;
+          case "pdf": $ctype="application/pdf"; break;
+          case "exe": $ctype="application/octet-stream"; break;
+          case "zip": $ctype="application/zip"; break;
+          case "doc": $ctype="application/msword"; break;
+          case "xls": $ctype="application/vnd.ms-excel"; break;
+          case "ppt": $ctype="application/vnd.ms-powerpoint"; break;
+          case "gif": $ctype="image/gif"; break;
+          case "png": $ctype="image/png"; break;
+          case "jpe": case "jpeg":
+          case "jpg": $ctype="image/jpg"; break;
+          default: $ctype="application/force-download";
+      }
+      if (!is_file($filename)) {
+          die("File not found.");
+      }  
+
+      header("Pragma: public");
+      header("Expires: 0");
+      header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+      header("Cache-Control: private",false);
+      header("Content-Type: $ctype");
+      if($download){
+          header("Content-Disposition: attachment; filename=\"".basename($filename)."\";");
+          header("Content-Transfer-Encoding: binary");
+      }
+      header("Content-Length: ".@filesize($filename));
+      set_time_limit(0);
+      @readfile("$filename") or die("File not found.");
+      app()->end();
   }
  
 }

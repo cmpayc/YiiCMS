@@ -1,0 +1,4 @@
+RewriteEngine on
+#RewriteBase /yiicms
+
+RewriteRule ^(.*)$ index.php [L]

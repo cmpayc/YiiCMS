@@ -4,10 +4,10 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
 	<!-- blueprint CSS framework -->
-	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/bootstrap.min.css" />
-        <link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/todc-bootstrap.css" />
-        <script src="<?php echo Yii::app()->request->baseUrl; ?>/js/jquery-1.9.1.min.js"></script>
-        <script src="<?php echo Yii::app()->request->baseUrl; ?>/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/admin/css/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/admin/css/todc-bootstrap.css" />
+        <script src="<?php echo Yii::app()->request->baseUrl; ?>/admin/js/jquery-1.9.1.min.js"></script>
+        <script src="<?php echo Yii::app()->request->baseUrl; ?>/admin/js/bootstrap.min.js"></script>
         
         <?php foreach($this->clips as $k=>$v) if(strpos($k, 'extraCSS') === 0 || strpos($k, 'widgetCSS') === 0) echo $v;?>
         <?php foreach($this->clips as $k=>$v) if(strpos($k, 'extraJS') === 0 || strpos($k, 'widgetJS') === 0) echo $v;?>
