@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Хост: localhost
--- Время создания: Фев 13 2013 г., 15:53
+-- Время создания: Фев 20 2013 г., 01:53
 -- Версия сервера: 5.1.58
 -- Версия PHP: 5.3.6-13ubuntu3.5
 
@@ -17,7 +17,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8 */;
 
 --
--- База данных: `testing`
+-- База данных: `yiicms`
 --
 
 -- --------------------------------------------------------
@@ -63,14 +63,40 @@ CREATE TABLE IF NOT EXISTS `DOMAINS` (
   `domain_name` varchar(100) NOT NULL,
   `site_id` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=12 ;
+
+-- --------------------------------------------------------
 
 --
--- Дамп данных таблицы `DOMAINS`
+-- Структура таблицы `MENUS`
 --
 
-INSERT INTO `DOMAINS` (`id`, `domain_name`, `site_id`) VALUES
-(1, 'test.vm', 1);
+CREATE TABLE IF NOT EXISTS `MENUS` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `site_id` int(11) unsigned NOT NULL,
+  `parent` int(5) unsigned NOT NULL DEFAULT '0',
+  `name` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `type` smallint(2) unsigned NOT NULL,
+  `link` varchar(100) CHARACTER SET utf8 NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `PAGES`
+--
+
+CREATE TABLE IF NOT EXISTS `PAGES` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `site_id` int(11) unsigned NOT NULL,
+  `parent` int(5) unsigned NOT NULL DEFAULT '0',
+  `name` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `content` text CHARACTER SET utf8 NOT NULL,
+  `code` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `active` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=4 ;
 
 -- --------------------------------------------------------
 
@@ -85,13 +111,6 @@ CREATE TABLE IF NOT EXISTS `ROLES` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
 
---
--- Дамп данных таблицы `ROLES`
---
-
-INSERT INTO `ROLES` (`id`, `name`, `access`) VALUES
-(1, 'admin', '{"allow":{"index":"*","admin":"*"},"deny":{}}');
-
 -- --------------------------------------------------------
 
 --
@@ -104,13 +123,6 @@ CREATE TABLE IF NOT EXISTS `SITES` (
   `folder` varchar(50) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
-
---
--- Дамп данных таблицы `SITES`
---
-
-INSERT INTO `SITES` (`id`, `title`, `folder`) VALUES
-(1, 'Тестовый сайт', 'test');
 
 -- --------------------------------------------------------
 
@@ -128,13 +140,6 @@ CREATE TABLE IF NOT EXISTS `USERS` (
   `created` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
-
---
--- Дамп данных таблицы `USERS`
---
-
-INSERT INTO `USERS` (`id`, `username`, `password`, `active`, `role_id`, `changed`, `created`) VALUES
-(1, 'admin', '123', 1, 1, '2013-02-12 10:31:44', '0000-00-00 00:00:00');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
