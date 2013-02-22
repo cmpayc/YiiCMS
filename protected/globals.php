@@ -70,3 +70,10 @@ function e($message = '...'){
 	d($message);
 	throw new Exception($message);
 }
+
+function d($text = '...') {
+  if ( !is_string($text) ) {
+    $text = var_export($text, true);
+  }
+  @error_log(date('Y-m-d H:i:s ') . trim($text) . "\n", 3, dirname(__FILE__) . '/../../error.log');
+}

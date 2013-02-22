@@ -37,7 +37,7 @@
             <li><a href="<?=app()->createUrl('admin/sites/new/1')?>">Добавить новый</a></li>
             <li><a href="<?=app()->createUrl('admin/sites')?>">Редактировать</a></li>
             <li class="divider"></li>
-            <li><a href="#">Редактировать домены</a></li>
+            <li><a href="<?=app()->createUrl('admin/domains')?>">Редактировать домены</a></li>
           </ul>
         </li>
         <li class="__js_pageBlocks"><a href="#">Инфоблоки</a></li>

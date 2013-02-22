@@ -1,5 +1,5 @@
 <?php $this->renderPartial('widgetSites', array('sites'=>$sites));?>
-<div class="span9">
+<div class="span9 __js_mainContent">
     <div class="well">
         <?php if(!$sites):?>
         Не найдены сайты.<br />

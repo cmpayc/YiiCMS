@@ -58,6 +58,7 @@ class BaseAdminController extends CController {
       switch ($file_extension) {
           case "css": $ctype="text/css";$download = false;break;
           case "js": $ctype="text/javascript";$download = false;break;
+          case "htm": case "html": $ctype="text/html"; $download = false;break;
           case "pdf": $ctype="application/pdf"; break;
           case "exe": $ctype="application/octet-stream"; break;
           case "zip": $ctype="application/zip"; break;

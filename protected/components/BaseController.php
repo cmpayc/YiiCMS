@@ -12,42 +12,7 @@ class BaseController extends CController
 
     public $site = false;
     public $templateFolder = false;
-
-    public function init() {
-
-        // Load site info
-        $DOMAIN = false;
-        if(!$DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> $_SERVER['SERVER_NAME']))){
-            $host = explode('.', $_SERVER['SERVER_NAME']);
-            if(count($host) == 3){
-                if($host[0] == 'www'){
-                    $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> $host[1].'.'.$host[2]));
-                }
-                if(!$DOMAIN)
-                    $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> '.'.$host[1].'.'.$host[2]));
-            }else if(count($host) == 2){
-                $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> 'www.'.$host[0].'.'.$host[1]));
-                if(!$DOMAIN)
-                    $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> '.'.$host[1].'.'.$host[2]));
-            }
-        }
-        if(!$DOMAIN || !$DOMAIN->site){
-            echo 'Domain not founded';
-            app()->end();
-        }
-        // Пробуем загрузить указанный файл
-        $request = preg_replace('/.*'.str_replace('/','\/',app()->baseUrl).'/', '', strtolower($_SERVER['REQUEST_URI']));
-        $request = str_replace('/',DS,$request);
-        if(is_file(app()->basePath.DS.'views'.DS.'sites'.DS.$DOMAIN->site->folder.$request)){
-            $this->returnFile(app()->basePath.DS.'views'.DS.'sites'.DS.$DOMAIN->site->folder.$request);
-        }
-        
-        $this->site = $DOMAIN->site;
-        $this->templateFolder = '//sites/'.$this->site->folder;
-        $this->layout = '//sites/'.$this->site->folder.'/template';
-
-        return parent::init();
-    }
+    public $sitePath = false;
 
     public function showPanel(){
         if(!Yii::app()->getUser()->isGuest) {
@@ -57,10 +22,12 @@ class BaseController extends CController
         
     public function returnFile($filename){
       $file_extension = strtolower(substr(strrchr($filename,"."),1));
+      if($file_extension == 'php') app()->end();
       $download = true;
       switch ($file_extension) {
           case "css": $ctype="text/css";$download = false;break;
           case "js": $ctype="text/javascript";$download = false;break;
+          case "htm": case "html": $ctype="text/html"; $download = false;break;
           case "pdf": $ctype="application/pdf"; break;
           case "exe": $ctype="application/octet-stream"; break;
           case "zip": $ctype="application/zip"; break;
@@ -90,5 +57,45 @@ class BaseController extends CController
       set_time_limit(0);
       @readfile("$filename") or die("File not found.");
       app()->end();
+   }
+   
+   public function startSite(){
+       // Load site info
+        $DOMAIN = false;
+        if(!$DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> $_SERVER['SERVER_NAME']))){
+            $host = explode('.', $_SERVER['SERVER_NAME']);
+            if(count($host) == 3){
+                if($host[0] == 'www'){
+                    $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> $host[1].'.'.$host[2]));
+                }
+                if(!$DOMAIN)
+                    $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> '.'.$host[1].'.'.$host[2]));
+            }else if(count($host) == 2){
+                $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> 'www.'.$host[0].'.'.$host[1]));
+                if(!$DOMAIN)
+                    $DOMAIN = DOMAINS::model()->findByAttributes(array('domain_name'=> '.'.$host[1].'.'.$host[2]));
+            }
+        }
+        if(!$DOMAIN || !$DOMAIN->site){
+            echo 'Domain not founded';
+            app()->end();
+        }
+        // Пробуем загрузить указанный файл
+        if(app()->baseUrl){
+            $request = preg_replace('/.*'.str_replace('/','\/',app()->baseUrl).'/', '', strtolower($_SERVER['REQUEST_URI']));
+        }else{
+            $request = strtolower($_SERVER['REQUEST_URI']);
+        }
+        $request = str_replace('/',DS,$request);
+        if($request != DS.'index.php' && is_file(app()->basePath.DS.'views'.DS.'sites'.DS.$DOMAIN->site->folder.$request)){
+            $this->returnFile(app()->basePath.DS.'views'.DS.'sites'.DS.$DOMAIN->site->folder.$request);
+        }
+
+        $this->site = $DOMAIN->site;
+        $this->sitePath = app()->basePath.DS.'views'.DS.'sites'.DS.$this->site->folder.DS;
+        $this->templateFolder = '//sites/'.$this->site->folder;
+        $this->layout = '//sites/'.$this->site->folder.'/template';
+        
+        return true;
    }
 }

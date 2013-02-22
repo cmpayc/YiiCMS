@@ -16,13 +16,13 @@ class AdminController extends BaseAdminController
             }
             if(!query('inputFolder')){
                 $error .= '- Введите папку сайта<br />';
-            }else if(!preg_match('/[a-zA-Z-_]/',query('inputFolder'))){
+            }else if(!preg_match('/^[a-zA-Z0-9-_]+$/',query('inputFolder'))){
                 $error .= '- Папка сайта должна содержать только буквы латинского алфавита<br />';
             }
             if(!query('inputDomains')){
                 $error .= '- Введите домены<br />';
             // TODO: Доделать для русских доменов
-            }else if(!preg_match('/[a-zA-Z-_\.,]/',query('inputDomains'))){
+            }else if(!preg_match('/^[a-zA-Z0-9-_\.,]+$/',query('inputDomains'))){
                 $error .= '- Домены должны содержать только буквы латинского алфавита<br />';
             }
             if(!is_dir(app()->getBasePath().DS.'views'.DS.'sites')){
@@ -59,10 +59,12 @@ class AdminController extends BaseAdminController
                 $site->save();
                 if(substr_count($domains,',') > 0){
                     foreach(explode(',',$domains) as $dom){
-                        $domain = new DOMAINS();
-                        $domain->domain_name = $dom;
-                        $domain->site_id = $site->id;
-                        $domain->save();
+                        if($dom){
+                            $domain = new DOMAINS();
+                            $domain->domain_name = $dom;
+                            $domain->site_id = $site->id;
+                            $domain->save();
+                        }
                     }
                 }else{
                     $domain = new DOMAINS();
@@ -70,6 +72,14 @@ class AdminController extends BaseAdminController
                     $domain->site_id = $site->id;
                     $domain->save();
                 }
+                $page = new PAGES();
+                $page->site_id = $site->id;
+                $page->parent = 0;
+                $page->name = 'Главная страница';
+                $page->content = 'Hello world!';
+                $page->code = 'index';
+                $page->active = 1;
+                $page->save();
                 $this->redirect(app()->createUrl('admin/siteEdit/id/'.$site->id));
             }
         }      
@@ -82,8 +92,14 @@ class AdminController extends BaseAdminController
     
     public function actionSiteEdit(){
         $sites = SITES::model()->findAll();
+        $siteId = (int) query('id');
+        $site = SITES::model()->findByPk($siteId);
+        $pages = PAGES::model()->findAllByAttributes(array('site_id'=>$site->id,'parent'=>0));
         $this->render('siteEdit', array(
             'sites' => $sites,
+            'site' => $site,
+            'siteId' => $siteId,
+            'pages' => $pages,
         ));
     }
     
@@ -106,7 +122,7 @@ class AdminController extends BaseAdminController
             }else if(query('isnew')){
                 $domainName = strtolower(query('domainName'));
                 $siteId = (int) query('siteId');
-                if(!$domainName || !preg_match('/[a-z\.-_]/',$domainName))
+                if(!$domainName || !preg_match('/^[a-zA-Z0-9\.-_]+$/',$domainName))
                     e('Domain is not correct');
                 if(!$siteId)
                     e('Site is not correct');
@@ -119,7 +135,7 @@ class AdminController extends BaseAdminController
                 $id = (int) query('id');
                 $domainName = strtolower(query('domainName'));
                 $siteId = (int) query('siteId');
-                if(!$domainName || !preg_match('/[a-z\.-_]/',$domainName))
+                if(!$domainName || !preg_match('/^[a-zA-Z0-9\.-_]+$/',$domainName))
                     e('Domain is not correct');
                 if(!$siteId)
                     e('Site is not correct');
@@ -134,6 +150,155 @@ class AdminController extends BaseAdminController
             $result->error = $e->getMessage();
         }
         echo CJSON::encode($result);
+    }
+    
+    public function actionAjaxSaveSiteSettings(){
+        $result = new stdClass();
+        try {
+            $error = '';
+            $siteId = (int) query('siteId');
+            if(!$site = SITES::model()->findByPk($siteId))
+                e('- Не указан сайт');
+            if(query('title') && query('domains')){
+                if(!query('title')){
+                    $error .= '- Введите заголовок сайта<br />';
+                }
+                if(!query('domains')){
+                    $error .= '- Введите домены<br />';
+                // TODO: Доделать для русских доменов
+                }else if(!preg_match('/^[a-zA-Z0-9-_\.,]+$/',query('domains'))){
+                    $error .= '- Домены должны содержать только буквы латинского алфавита<br />';
+                }
+                if($error)
+                    e($error);
+                $title = query('title');
+                $site->title = $title;
+                $site->save();
+                $domains = strtolower(query('domains'));
+                DOMAINS::model()->deleteAllByAttributes(array('site_id'=>$site->id));
+                if(substr_count($domains,',') > 0){
+                    foreach(explode(',',$domains) as $dom){
+                        if($dom){
+                            $domain = new DOMAINS();
+                            $domain->domain_name = $dom;
+                            $domain->site_id = $site->id;
+                            $domain->save();
+                        }
+                    }
+                }else{
+                    $domain = new DOMAINS();
+                    $domain->domain_name = $domains;
+                    $domain->site_id = $site->id;
+                    $domain->save();
+                }
+                $result->save = 1;
+            }
+        } catch (Exception $e) {
+            $result->error = $e->getMessage();
+        }
+        echo CJSON::encode($result);
+    }
+    
+    public function actionAjaxLoadPages(){
+        $result = new stdClass();
+        try {
+            $pageId = (int) query('pageId');
+            $allPages = PAGES::model()->findAllByAttributes(array('parent'=>$pageId));
+            $pages = array();
+            foreach($allPages as $page){
+                $pages[$page->id] = $page->name;
+            }
+            $result->pages = $pages;
+        }catch (Exception $e) {
+            $result->error = $e->getMessage();
+        }
+        echo CJSON::encode($result);
+    }
+    
+    public function actionAjaxLoadPage(){
+        $result = new stdClass();
+        try {
+            $pageId = (int) query('pageId');
+            $siteId = (int) query('siteId');
+            if(!$page = PAGES::model()->findByAttributes(array('id'=>$pageId,'site_id'=>$siteId)))
+                e('Страница не найдена');
+            $result = $page->attributes;
+        }catch (Exception $e) {
+            $result->error = $e->getMessage();
+        }
+        echo CJSON::encode($result);
+    }
+    
+    public function actionAjaxSavePage(){
+        $result = new stdClass();
+        try {
+            $pageId = (int) query('pageId');
+            $siteId = (int) query('siteId');
+            if(!$page = PAGES::model()->findByAttributes(array('id'=>$pageId,'site_id'=>$siteId)))
+                e('Страница не найдена');
+            $page->attributes=$_REQUEST;
+            if(!$page->validate())
+              e($this->__formatErrors($page->getErrors()));
+            $page->save();
+            $result->save = 1;
+        }catch (Exception $e) {
+            $result->error = $e->getMessage();
+        }
+        echo CJSON::encode($result);
+    }
+    
+    public function actionAjaxChangePageParent(){
+        $result = new stdClass();
+        try {
+            $pageId = (int) query('pageId');
+            $siteId = (int) query('siteId');
+            $parent = (int) query('parent');
+            if(!$page = PAGES::model()->findByAttributes(array('id'=>$pageId,'site_id'=>$siteId)))
+                e('Страница не найдена');
+            if($page->parent == 0 && $page->code == 'index')
+                e('Страница не найдена');
+            if($parent != 0 && !$parentPage = PAGES::model()->findByAttributes(array('id'=>$parent,'site_id'=>$siteId)))
+                e('Страница не найдена');
+            $page->parent = $parent;
+            $page->save();
+            $result->save = 1;
+        }catch (Exception $e) {
+            $result->error = $e->getMessage();
+        }
+        echo CJSON::encode($result);
+    }
+    
+    public function actionAjaxElfinder(){
+        $result = new stdClass();
+        try {
+            $siteId = (int) query('siteId');
+            if(!$site = SITES::model()->findByPk($siteId))
+                e('site error');
+
+            include_once app()->basePath.DS.'inc'.DS.'elfinder'.DS.'elFinderConnector.class.php';
+            include_once app()->basePath.DS.'inc'.DS.'elfinder'.DS.'elFinder.class.php';
+            include_once app()->basePath.DS.'inc'.DS.'elfinder'.DS.'elFinderVolumeDriver.class.php';
+            include_once app()->basePath.DS.'inc'.DS.'elfinder'.DS.'elFinderVolumeLocalFileSystem.class.php';
+
+            $opts = array(
+                'debug' => true,
+                'roots' => array(
+                    array(
+                            'driver'        => 'LocalFileSystem',
+                            'path'          => app()->basePath.DS.'views'.DS.'sites'.DS.$site->folder.DS,
+                            'URL'           => app()->request->baseUrl.'/',
+                            'accessControl' => 'access' 
+                    )
+                )
+            );
+
+            $connector = new elFinderConnector(new elFinder($opts));
+            $connector->run();
+        
+        } catch (Exception $e) {
+            $result->error = $e->getMessage();
+            echo CJSON::decode($result);
+        }
     }
     
     public function actionLogin(){
@@ -157,6 +322,14 @@ class AdminController extends BaseAdminController
     public function actionLogout(){
         app()->user->logout();
         $this->redirect(app()->createUrl('admin/login'));
+    }
+    
+    private function __formatErrors($errors){
+        $arrErrors = '';
+        foreach($errors as $attr){
+          $arrErrors .= $attr[0] . '<br/>';
+        }
+        return $arrErrors;
     }
         
 }

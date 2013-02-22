@@ -1,5 +1,5 @@
 <?php $this->renderPartial('widgetSites', array('sites'=>$sites));?>
-<div class="span9">
+<div class="span9 __js_mainContent">
     <div class="well">
     <?php if(query('new')):?>
     <form class="form-horizontal" id="adminForm" method="POST" action="<?=app()->createUrl('admin/sites')?>">
